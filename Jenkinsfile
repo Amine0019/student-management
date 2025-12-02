@@ -1,37 +1,56 @@
 pipeline {
     agent any
 
-    tools {
-        maven 'M2_HOME'
-    }
-
     stages {
-        stage('Hello World') {
+        stage('Checkout') {
             steps {
-                echo 'Hello world'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: 'refs/heads/chirinedardouri']],
+                    userRemoteConfigs: [[
+                        url: 'https://github.com/Amine0019/student-management.git',
+                        credentialsId: 'mycredentials'
+                    ]]
+                ])
             }
         }
 
-        stage('GIT') {
+        stage('Build JAR') {
             steps {
-                git branch: 'main', 
-                url: 'https://github.com/chirinedardouri/dashboardproduction.git'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Maven') {
+        stage('Test') {
             steps {
-                sh "mvn -version"
+                sh 'mvn test'
             }
         }
-    }
 
-    post {
-        success {
-            echo 'Pipeline finished successfully!'
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t chirinedardouri/alpine:1.0.0 .'
+            }
         }
-        failure {
-            echo 'Pipeline failed!'
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'mydockerhub-credentials'
+                )]) {
+                    sh 'docker push chirinedardouri/alpine:1.0.0'
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    docker stop studentapp || true
+                    docker rm studentapp || true
+                    docker run -d --name studentapp -p 8081:8080 chirinedardouri/alpine:1.0.0
+                '''
+            }
         }
     }
 }

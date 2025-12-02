@@ -2,6 +2,7 @@ pipeline {
     agent any
 
     stages {
+        // Étape 1 : Récupération du code depuis GitHub
         stage('Checkout') {
             steps {
                 checkout([
@@ -15,18 +16,28 @@ pipeline {
             }
         }
 
+        // Étape 2 : Compilation du projet et génération du JAR
         stage('Build JAR') {
             steps {
                 sh 'mvn clean package -DskipTests'
             }
         }
 
+        // Étape 3 : Exécution des tests Maven
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        // Étape 4 : Construction de l'image Docker
         stage('Build Docker Image') {
             steps {
                 sh 'docker build -t lassdc/student-management:latest .'
             }
         }
 
+        // Étape 5 : Push de l'image Docker sur Docker Hub
         stage('Push Docker Image') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PSW')]) {
@@ -37,4 +48,5 @@ pipeline {
         }
     }
 }
+
 

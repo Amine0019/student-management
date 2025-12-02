@@ -21,24 +21,38 @@ pipeline {
             }
         }
 
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t aminebrrn/student-management:latest ."
+                sh 'docker build -t aminebrrn/student-management:latest .'
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh "echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"
-                sh "docker push aminebrrn/student-management:latest"
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials', 
+                    usernameVariable: 'DOCKERHUB_USER', 
+                    passwordVariable: 'DOCKERHUB_PSW'
+                )]) {
+                    sh 'echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USER --password-stdin'
+                    sh 'docker push aminebrrn/student-management:latest'
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                sh "docker stop studentapp || true"
-                sh "docker rm studentapp || true"
-                sh "docker run -d --name studentapp -p 8080:8080 aminebrrn/student-management:latest"
+                sh '''
+                    docker stop studentapp || true
+                    docker rm studentapp || true
+                    docker run -d --name studentapp -p 8081:8080 aminebrrn/student-management:latest
+                '''
             }
         }
     }

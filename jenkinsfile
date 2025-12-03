@@ -1,0 +1,28 @@
+pipeline {
+    agent any
+    
+
+    stages {
+        stage('1. GIT Checkout') {
+            steps {
+                git branch: 'zouaoui-samer', url: 'https://github.com/Amine0019/student-management.git', credentialsId: '3c513d29-97f9-4563-a82a-738fa9ed3009'
+            }
+        }
+        
+        stage('2. Maven Build') {
+            steps {
+                sh 'mvn clean package -DskipTests'
+            }
+        }
+
+        stage('3. SonarQube Analysis') {
+            withSonarQubeEnv('SonarQube Local') { 
+                steps {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+        
+
+    }
+}

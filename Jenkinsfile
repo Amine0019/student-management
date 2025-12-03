@@ -1,18 +1,16 @@
 pipeline {
     agent any
     
-    tools {
-        maven 'Maven'
-    }
-    
     environment {
         SONAR_HOST_URL = 'http://localhost:9000'
+        MAVEN_HOME = '/usr/share/maven'
+        PATH = "${MAVEN_HOME}/bin:${env.PATH}"
     }
     
     stages {
         stage('1. GIT Checkout') {
             steps {
-                echo ' Checking out code from Git...'
+                echo 'Checking out code from Git...'
                 git branch: 'zouaoui-samer', 
                     url: 'https://github.com/Amine0019/student-management.git', 
                     credentialsId: '3c513d29-97f9-4563-a82a-738fa9ed3009'
@@ -21,7 +19,7 @@ pipeline {
         
         stage('2. Maven Build') {
             steps {
-                echo ' Building with Maven...'
+                echo 'Building with Maven...'
                 sh 'mvn clean package -DskipTests'
             }
         }
@@ -45,13 +43,13 @@ pipeline {
         stage('4. Quality Gate') {
             steps {
                 script {
-                    echo '⏳ Waiting for Quality Gate...'
+                    echo ' Waiting for Quality Gate...'
                     timeout(time: 5, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
                             echo " Quality Gate status: ${qg.status}"
                         } else {
-                            echo ' Quality Gate passed!'
+                            echo 'Quality Gate passed!'
                         }
                     }
                 }

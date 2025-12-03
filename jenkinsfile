@@ -16,8 +16,11 @@ pipeline {
         }
 
         stage('3. SonarQube Analysis') {
-            withSonarQubeEnv('SonarQube Local') { 
+
+            withSonarQubeEnv('jenkins-sonar') { 
                 steps {
+                    echo 'Running SonarQube analysis...'
+
                     sh 'mvn sonar:sonar'
                 }
             }

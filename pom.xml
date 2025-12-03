@@ -5,30 +5,21 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.5</version>
-        <relativePath/> <!-- lookup parent from repository -->
+        <version>3.2.0</version> <relativePath/> 
     </parent>
     <groupId>tn.esprit</groupId>
     <artifactId>student-management</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>student-management</name>
     <description>student-management</description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
+
     <properties>
         <java.version>17</java.version>
-    </properties>
+        
+        <sonar.host.url>http://192.168.192.130:9000</sonar.host.url>
+        <sonar.projectKey>student-management-ci</sonar.projectKey>
+        </properties>
+    
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -38,7 +29,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
@@ -47,8 +37,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.38</version>
-            <optional>true</optional>
+            <version>1.18.30</version> <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -63,7 +52,7 @@
     </dependencies>
 
     <build>
-    <plugins>
+        <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
@@ -78,5 +67,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

@@ -1,31 +1,57 @@
 pipeline {
     agent any
     
-
+    tools {
+        maven 'Maven' // Assurez-vous que Maven est configuré dans Global Tool Configuration
+    }
+    
     stages {
         stage('1. GIT Checkout') {
             steps {
-                git branch: 'zouaoui-samer', url: 'https://github.com/Amine0019/student-management.git', credentialsId: '3c513d29-97f9-4563-a82a-738fa9ed3009'
+                git branch: 'zouaoui-samer', 
+                    url: 'https://github.com/Amine0019/student-management.git', 
+                    credentialsId: '3c513d29-97f9-4563-a82a-738fa9ed3009'
             }
         }
         
         stage('2. Maven Build') {
             steps {
+                echo 'Building with Maven...'
                 sh 'mvn clean package -DskipTests'
             }
         }
-
+        
         stage('3. SonarQube Analysis') {
-
-            withSonarQubeEnv('jenkins-sonar') { 
-                steps {
-                    echo 'Running SonarQube analysis...'
-
-                    sh 'mvn sonar:sonar'
+            steps {
+                script {
+                    withSonarQubeEnv('jenkins-sonar') {
+                        echo 'Running SonarQube analysis...'
+                        sh 'mvn sonar:sonar'
+                    }
                 }
             }
         }
         
-
+        stage('4. Quality Gate') {
+            steps {
+                script {
+                    timeout(time: 1, unit: 'HOURS') {
+                        def qg = waitForQualityGate()
+                        if (qg.status != 'OK') {
+                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo 'Pipeline completed successfully!'
+        }
+        failure {
+            echo 'Pipeline failed!'
+        }
     }
 }

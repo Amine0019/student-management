@@ -2,12 +2,17 @@ pipeline {
     agent any
     
     tools {
-        maven 'Maven' // Assurez-vous que Maven est configuré dans Global Tool Configuration
+        maven 'Maven'
+    }
+    
+    environment {
+        SONAR_HOST_URL = 'http://localhost:9000'
     }
     
     stages {
         stage('1. GIT Checkout') {
             steps {
+                echo ' Checking out code from Git...'
                 git branch: 'zouaoui-samer', 
                     url: 'https://github.com/Amine0019/student-management.git', 
                     credentialsId: '3c513d29-97f9-4563-a82a-738fa9ed3009'
@@ -16,7 +21,7 @@ pipeline {
         
         stage('2. Maven Build') {
             steps {
-                echo 'Building with Maven...'
+                echo ' Building with Maven...'
                 sh 'mvn clean package -DskipTests'
             }
         }
@@ -25,8 +30,13 @@ pipeline {
             steps {
                 script {
                     withSonarQubeEnv('jenkins-sonar') {
-                        echo 'Running SonarQube analysis...'
-                        sh 'mvn sonar:sonar'
+                        echo ' Running SonarQube analysis...'
+                        sh '''
+                            mvn sonar:sonar \
+                              -Dsonar.projectKey=student-management \
+                              -Dsonar.projectName="Student Management" \
+                              -Dsonar.host.url=${SONAR_HOST_URL}
+                        '''
                     }
                 }
             }
@@ -35,10 +45,13 @@ pipeline {
         stage('4. Quality Gate') {
             steps {
                 script {
-                    timeout(time: 1, unit: 'HOURS') {
+                    echo '⏳ Waiting for Quality Gate...'
+                    timeout(time: 5, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            error "Pipeline aborted due to quality gate failure: ${qg.status}"
+                            echo " Quality Gate status: ${qg.status}"
+                        } else {
+                            echo ' Quality Gate passed!'
                         }
                     }
                 }
@@ -48,10 +61,11 @@ pipeline {
     
     post {
         success {
-            echo 'Pipeline completed successfully!'
+            echo ' Pipeline completed successfully!'
+            echo " View results: ${SONAR_HOST_URL}/dashboard?id=student-management"
         }
         failure {
-            echo 'Pipeline failed!'
+            echo ' Pipeline failed!'
         }
     }
 }

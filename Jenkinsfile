@@ -29,26 +29,29 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t chirinedardouri/alpine:1.0.0 .'
+                sh 'sudo docker build -t chirinedardouri/alpine:1.0.0 .'
             }
         }
 
         stage('Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'mydockerhub-credentials'
-                )]) {
-                    sh 'docker push chirinedardouri/alpine:1.0.0'
-                }
-            }
+          steps {
+        withCredentials([usernamePassword(
+            credentialsId: 'mydockerhub-credentials', 
+            usernameVariable: 'DOCKER_USER', 
+            passwordVariable: 'DOCKER_PASS'
+        )]) {
+            sh 'echo $DOCKER_PASS | sudo docker login -u $DOCKER_USER --password-stdin'
+            sh 'sudo docker push chirinedardouri/alpine:1.0.0'
         }
+    }
+}
 
         stage('Deploy') {
             steps {
                 sh '''
-                    docker stop studentapp || true
-                    docker rm studentapp || true
-                    docker run -d --name studentapp -p 8081:8080 chirinedardouri/alpine:1.0.0
+                    sudo docker stop studentapp || true
+                    sudo docker rm studentapp || true
+                    sudo docker run -d --name studentapp -p 8081:8080 chirinedardouri/alpine:1.0.0
                 '''
             }
         }

@@ -24,20 +24,22 @@ pipeline {
 				sh 'mvn compile  package -DskipTests'
 			}
 		}
-		/*
 		stage('4 SonarQube analysis'){
 			steps {
-
+				withSonarQubeEnv('My SonarQube Server') {
+					sh 'mvn sonar:sonar'
+				}
 			}
 
 		}
-
 		stage('5 Quality Gate Check'){
 			steps {
-
+				timeout(time: 1, unit: 'HOURS') {
+					waitForQualityGate abortPipeline: true
+				}
 			}
 		}
-		*/
+
 
 	}
 }

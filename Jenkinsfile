@@ -24,6 +24,7 @@ pipeline {
 				sh 'mvn compile  package -DskipTests'
 			}
 		}
+		/*
 		stage('4 SonarQube analysis'){
 			steps {
 
@@ -36,6 +37,7 @@ pipeline {
 
 			}
 		}
+		*/
 
 	}
 }

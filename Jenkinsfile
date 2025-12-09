@@ -54,9 +54,20 @@ pipeline {
 		}
 
 
+		stage('Build Docker Image') {
+			steps {
+				sh 'docker build -t lassdc/student-management:latest .'
+			}
+		}
 
-
-
+		stage('Push Docker Image') {
+			steps {
+				withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PSW')]) {
+					sh 'echo $DOCKER_PSW | docker login -u $DOCKER_USER --password-stdin'
+					sh 'docker push lassdc/student-management:latest'
+				}
+			}
+		}
 
 
 

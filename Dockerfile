@@ -1,6 +1,6 @@
 FROM eclipse-temurin:17-jdk
 
-WORKDIR /app
+WORKDIR src/main/java
 
 COPY target/*.jar app.jar
 

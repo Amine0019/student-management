@@ -1,9 +1,11 @@
+# Backend Dockerfile
 FROM eclipse-temurin:17-jdk
 
-WORKDIR src/main/java
+WORKDIR /app
 
-COPY target/*.jar app.jar
+# Copier le jar compilé
+COPY target/student-management-0.0.1-SNAPSHOT.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8089
 
 ENTRYPOINT ["java","-jar","app.jar"]

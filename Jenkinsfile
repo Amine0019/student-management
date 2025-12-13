@@ -56,18 +56,23 @@ pipeline {
 
 		stage('Build Docker Image') {
 			steps {
-				sh 'docker build -t amine0019/student-management:latest .'
+				sh 'docker build -t amine0019/student-management-backend:latest .'
 			}
 		}
 
 		stage('Push Docker Image') {
 			steps {
-				withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PSW')]) {
+				withCredentials([usernamePassword(
+					credentialsId: 'dockerhub-credentials',
+					usernameVariable: 'DOCKER_USER',
+					passwordVariable: 'DOCKER_PSW'
+				)]) {
 					sh 'echo $DOCKER_PSW | docker login -u $DOCKER_USER --password-stdin'
-					sh 'docker push amine0019/student-management:latest'
+					sh 'docker push amine0019/student-management-backend:latest'
 				}
 			}
 		}
+
 
 
 

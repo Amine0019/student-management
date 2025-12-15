@@ -73,6 +73,18 @@ pipeline {
 			}
 		}
 
+		stage('Deploy to Kubernetes') {
+			steps {
+				echo 'Deploying application to Kubernetes...'
+
+				sh '''
+        			kubectl apply -n devops -f k8s/mysql-pv-pvc.yaml
+        			kubectl apply -n devops -f k8s/mysql-deployment.yaml
+        			kubectl apply -n devops -f k8s/spring-deployment.yaml
+        		'''
+			}
+		}
+
 
 
 

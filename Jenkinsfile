@@ -53,7 +53,7 @@ pipeline {
 			}
 		}
 
-/*
+
 		stage('Build Docker Image') {
 			steps {
 				sh 'docker build -t amine0019/student-management-backend:latest .'
@@ -74,7 +74,7 @@ pipeline {
 		}
 
 
-*/
+
 
 
 	}

@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        // Configuration base de données
-        DB_CONTAINER = "mysql-student"
+        // Database configuration
+        DB_CONTAINER_BASE = "mysql-student"
         DB_NAME = "studentdb"
         DB_USER = "root"
         DB_PASSWORD = "root"
@@ -29,9 +29,20 @@ pipeline {
 
         stage('Start MySQL (Docker)') {
             steps {
+                script {
+                    // Create a unique container name per build to avoid conflicts
+                    env.DB_CONTAINER = "${DB_CONTAINER_BASE}-${env.BUILD_ID}"
+                }
                 sh '''
-                docker rm -f $DB_CONTAINER || true
+                // Remove any existing container with the same name
+                if [ $(docker ps -a -q -f name=$DB_CONTAINER) ]; then
+                    docker rm -f $DB_CONTAINER
+                fi
 
+                // Pull latest MySQL image
+                docker pull mysql:8
+
+                // Run MySQL container
                 docker run -d \
                   --name $DB_CONTAINER \
                   -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
@@ -44,7 +55,23 @@ pipeline {
 
         stage('Wait for MySQL') {
             steps {
-                sh 'sleep 20'
+                sh '''
+                echo "Waiting for MySQL to be ready..."
+
+                MAX_RETRIES=20
+                RETRY_COUNT=0
+                until docker exec $DB_CONTAINER mysqladmin ping -h "127.0.0.1" --silent; do
+                    RETRY_COUNT=$((RETRY_COUNT+1))
+                    if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
+                        echo "MySQL did not start in time."
+                        exit 1
+                    fi
+                    echo "Waiting for MySQL... ($RETRY_COUNT/$MAX_RETRIES)"
+                    sleep 3
+                done
+
+                echo "MySQL is ready!"
+                '''
             }
         }
 
@@ -52,7 +79,7 @@ pipeline {
             steps {
                 sh '''
                 mvn clean test \
-                  -Dspring.datasource.url=jdbc:mysql://localhost:3306/studentdb \
+                  -Dspring.datasource.url=jdbc:mysql://localhost:3306/$DB_NAME \
                   -Dspring.datasource.username=$DB_USER \
                   -Dspring.datasource.password=$DB_PASSWORD
                 '''
@@ -89,6 +116,7 @@ pipeline {
 
     post {
         always {
+            // Ensure the MySQL container is removed after the pipeline
             sh 'docker rm -f $DB_CONTAINER || true'
         }
         success {

@@ -55,6 +55,31 @@ pipeline {
                 '''
             }
         }
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                set -xe
+
+                echo "Checking cluster access..."
+                kubectl --kubeconfig=/home/vagrant/.kube/config get nodes
+
+                echo "Deploying MySQL..."
+                kubectl --kubeconfig=/home/vagrant/.kube/config apply -f k8s/mysql-pv.yaml
+                kubectl --kubeconfig=/home/vagrant/.kube/config apply -f k8s/mysql-pvc.yaml
+                kubectl --kubeconfig=/home/vagrant/.kube/config apply -f k8s/mysql-deployment.yaml
+                kubectl --kubeconfig=/home/vagrant/.kube/config apply -f k8s/mysql-service.yaml
+
+                echo "Deploying Spring Boot..."
+                kubectl --kubeconfig=/home/vagrant/.kube/config apply -n student-app -f k8s/spring-config-secret.yaml
+                kubectl --kubeconfig=/home/vagrant/.kube/config apply -n student-app -f k8s/spring-deployment.yaml
+                kubectl --kubeconfig=/home/vagrant/.kube/config apply -n student-app -f k8s/spring-service.yaml
+
+                echo "Waiting for rollouts..."
+                kubectl --kubeconfig=/home/vagrant/.kube/config rollout status deployment/mysql -n student-app
+                kubectl --kubeconfig=/home/vagrant/.kube/config rollout status deployment/spring-boot -n student-app
+                '''
+            }
+        }
     }
 <<<<<<< Updated upstream
 }

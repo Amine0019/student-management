@@ -21,6 +21,26 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+    environment {
+        SONAR_HOST_URL = 'http://192.168.33.10:9000' 
+    }
+    steps {
+        script {
+            withSonarQubeEnv('jenkins-sonar') {
+                echo 'Running SonarQube analysis...'
+                sh '''
+                    mvn sonar:sonar \
+                      -Dsonar.projectKey=student-management \
+                      -Dsonar.projectName="Student Management" \
+                      -Dsonar.host.url=${SONAR_HOST_URL} \
+                      -Dsonar.login=sqa_5c44883b5a156ecd842930da4e8172ff4b9c00ca
+                '''
+            }
+        }
+    }
+}
+
         stage('Test') {
             steps {
                 echo 'mvn test'

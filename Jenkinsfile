@@ -81,8 +81,4 @@ pipeline {
             }
         }
     }
-<<<<<<< Updated upstream
-}
-=======
-}
->>>>>>> Stashed changes
+

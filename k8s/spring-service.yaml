@@ -8,6 +8,6 @@ spec:
   selector:
     app: spring-boot
   ports:
-    - port: 8080         # port interne
-      targetPort: 8080   # port du Pod
-      nodePort: 30080    # port externe fixe
+    - port: 8080        
+      targetPort: 8080 
+      nodePort: 30080  

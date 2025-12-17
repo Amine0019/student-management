@@ -27,7 +27,7 @@ pipeline {
         stage('3. SonarQube Analysis') {
             steps {
                 script {
-                    withSonarQubeEnv('jenkins-sonar') {
+                    withSonarQubeEnv('sonarqube') {
                         echo ' Running SonarQube analysis...'
                         sh '''
                             mvn sonar:sonar \

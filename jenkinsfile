@@ -1,114 +1,99 @@
+
 pipeline {
     agent any
 
     environment {
-        // Database configuration
-        DB_CONTAINER_BASE = "mysql-student"
-        DB_NAME = "studentdb"
-        DB_USER = "root"
-        DB_PASSWORD = "root"
-
-        // Docker image
-        DOCKER_IMAGE = "lassdc/student-management:latest"
+        DOCKER_IMAGE = "student-management"
+        MYSQL_CONTAINER_NAME = "mysql-student-92"
+        MYSQL_ROOT_PASSWORD = "root"
+        MYSQL_DATABASE = "studentdb"
     }
 
     stages {
-
         stage('Checkout') {
             steps {
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: 'refs/heads/ilyes-mh']],
-                    userRemoteConfigs: [[
-                        url: 'https://github.com/Amine0019/student-management.git',
-                        credentialsId: 'github-credentials'
-                    ]]
-                ])
+                checkout([$class: 'GitSCM', branches: [[name: '*/ilyes-mh']],
+                          userRemoteConfigs: [[url: 'https://github.com/Amine0019/student-management.git', credentialsId: 'github-credentials']]])
             }
         }
 
         stage('Start MySQL (Docker)') {
             steps {
                 script {
-                    // Create a unique container name per build to avoid conflicts
-                    env.DB_CONTAINER = "${DB_CONTAINER_BASE}-${env.BUILD_ID}"
+                    // Supprimer l'ancien conteneur s'il existe
+                    sh '''
+                    if [ $(docker ps -a -q -f name=$MYSQL_CONTAINER_NAME) ]; then
+                        docker rm -f $MYSQL_CONTAINER_NAME
+                    fi
+                    '''
+
+                    // Trouver un port libre
+                    HOST_PORT=3306
+                    while lsof -i:$HOST_PORT >/dev/null 2>&1; do
+                        HOST_PORT=$((HOST_PORT+1))
+                    done
+
+                    echo "Using MySQL host port: $HOST_PORT"
+
+                    // Lancer le conteneur MySQL
+                    sh """
+                    docker pull mysql:8
+                    docker run -d --name $MYSQL_CONTAINER_NAME -e MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD -e MYSQL_DATABASE=$MYSQL_DATABASE -p $HOST_PORT:3306 mysql:8
+                    """
+                    
+                    // Stocker le port pour les étapes suivantes
+                    env.MYSQL_HOST_PORT = HOST_PORT
                 }
-                sh '''
-                # Remove any existing container with the same name
-                if [ $(docker ps -a -q -f name=$DB_CONTAINER) ]; then
-                    docker rm -f $DB_CONTAINER
-                fi
-
-                # Pull latest MySQL image
-                docker pull mysql:8
-
-                # Run MySQL container
-                docker run -d \
-                  --name $DB_CONTAINER \
-                  -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
-                  -e MYSQL_DATABASE=$DB_NAME \
-                  -p 3306:3306 \
-                  mysql:8
-                '''
             }
         }
 
         stage('Wait for MySQL') {
             steps {
-                sh '''
-                echo "Waiting for MySQL to be ready..."
-
-                MAX_RETRIES=20
-                RETRY_COUNT=0
-                until docker exec $DB_CONTAINER mysqladmin ping -h "127.0.0.1" --silent; do
-                    RETRY_COUNT=$((RETRY_COUNT+1))
-                    if [ $RETRY_COUNT -ge $MAX_RETRIES ]; then
-                        echo "MySQL did not start in time."
-                        exit 1
-                    fi
-                    echo "Waiting for MySQL... ($RETRY_COUNT/$MAX_RETRIES)"
-                    sleep 3
-                done
-
-                echo "MySQL is ready!"
-                '''
+                script {
+                    echo "Waiting for MySQL to be ready..."
+                    sh """
+                    until docker exec $MYSQL_CONTAINER_NAME mysqladmin ping -h"127.0.0.1" --silent; do
+                        sleep 2
+                    done
+                    """
+                }
             }
         }
 
         stage('Build & Test') {
             steps {
-                sh '''
-                mvn clean test \
-                  -Dspring.datasource.url=jdbc:mysql://localhost:3306/$DB_NAME \
-                  -Dspring.datasource.username=$DB_USER \
-                  -Dspring.datasource.password=$DB_PASSWORD
-                '''
+                script {
+                    echo "Running tests..."
+                    sh './mvnw clean test'
+                }
             }
         }
 
         stage('Build JAR') {
             steps {
-                sh 'mvn clean package -DskipTests'
+                script {
+                    echo "Building JAR..."
+                    sh './mvnw clean package -DskipTests'
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $DOCKER_IMAGE .'
+                script {
+                    echo "Building Docker image..."
+                    sh """
+                    docker build -t $DOCKER_IMAGE .
+                    """
+                }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-credentials',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PSW'
-                )]) {
-                    sh '''
-                    echo $DOCKER_PSW | docker login -u $DOCKER_USER --password-stdin
-                    docker push $DOCKER_IMAGE
-                    '''
+                script {
+                    echo "Pushing Docker image..."
+                    sh "docker push $DOCKER_IMAGE"
                 }
             }
         }
@@ -116,15 +101,17 @@ pipeline {
 
     post {
         always {
-            // Remove the MySQL container after the pipeline
-            sh 'docker rm -f $DB_CONTAINER || true'
+            script {
+                // Nettoyer le conteneur MySQL
+                sh "docker rm -f $MYSQL_CONTAINER_NAME || true"
+                echo "❌ Pipeline Jenkins terminé"
+            }
         }
         success {
-            echo '✅ Pipeline Jenkins terminé avec succès'
+            echo "✅ Pipeline Jenkins terminé avec succès"
         }
         failure {
-            echo '❌ Pipeline Jenkins échoué'
+            echo "❌ Pipeline Jenkins échoué"
         }
     }
 }
-

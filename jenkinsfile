@@ -34,15 +34,15 @@ pipeline {
                     env.DB_CONTAINER = "${DB_CONTAINER_BASE}-${env.BUILD_ID}"
                 }
                 sh '''
-                // Remove any existing container with the same name
+                # Remove any existing container with the same name
                 if [ $(docker ps -a -q -f name=$DB_CONTAINER) ]; then
                     docker rm -f $DB_CONTAINER
                 fi
 
-                // Pull latest MySQL image
+                # Pull latest MySQL image
                 docker pull mysql:8
 
-                // Run MySQL container
+                # Run MySQL container
                 docker run -d \
                   --name $DB_CONTAINER \
                   -e MYSQL_ROOT_PASSWORD=$DB_PASSWORD \
@@ -116,7 +116,7 @@ pipeline {
 
     post {
         always {
-            // Ensure the MySQL container is removed after the pipeline
+            // Remove the MySQL container after the pipeline
             sh 'docker rm -f $DB_CONTAINER || true'
         }
         success {

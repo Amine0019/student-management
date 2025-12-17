@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8
+    container_name: mysql-devops
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: studentdbdevops
+    ports:
+      - "3306:3306"
+    networks:
+      - devopsnet
+
+  spring:
+    build: .
+    container_name: student-app
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/studentdbdevops
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+    ports:
+      - "8089:8089"
+    depends_on:
+      - mysql
+    networks:
+      - devopsnet
+
+networks:
+  devopsnet:

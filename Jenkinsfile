@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        SONAR_HOST_URL = 'http://localhost:9000'
+        SONAR_HOST_URL = 'http://172.25.125.3:9000'
         MAVEN_HOME = '/usr/share/maven'
         PATH = "${MAVEN_HOME}/bin:${env.PATH}"
     }
@@ -28,13 +28,15 @@ pipeline {
             steps {
                 script {
                     withSonarQubeEnv('sonarqube') {
-                        echo ' Running SonarQube analysis...'
-                        sh '''
-                            mvn sonar:sonar \
-                              -Dsonar.projectKey=student-management \
-                              -Dsonar.projectName="Student Management" \
-                              -Dsonar.host.url=${SONAR_HOST_URL}
-                        '''
+                        echo 'Running SonarQube analysis...'
+                        withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                            sh '''
+                                mvn sonar:sonar \
+                                  -Dsonar.projectKey=student-management \
+                                  -Dsonar.projectName="Student Management" \
+                                  -Dsonar.login=${SONAR_TOKEN}
+                            '''
+                        }
                     }
                 }
             }
@@ -43,11 +45,11 @@ pipeline {
         stage('4. Quality Gate') {
             steps {
                 script {
-                    echo ' Waiting for Quality Gate...'
+                    echo 'Waiting for Quality Gate...'
                     timeout(time: 5, unit: 'MINUTES') {
                         def qg = waitForQualityGate()
                         if (qg.status != 'OK') {
-                            echo " Quality Gate status: ${qg.status}"
+                            error "Quality Gate failed: ${qg.status}"
                         } else {
                             echo 'Quality Gate passed!'
                         }
@@ -59,11 +61,11 @@ pipeline {
     
     post {
         success {
-            echo ' Pipeline completed successfully!'
-            echo " View results: ${SONAR_HOST_URL}/dashboard?id=student-management"
+            echo 'Pipeline completed successfully!'
+            echo "View results: ${SONAR_HOST_URL}/dashboard?id=student-management"
         }
         failure {
-            echo ' Pipeline failed!'
+            echo 'Pipeline failed!'
         }
     }
 }

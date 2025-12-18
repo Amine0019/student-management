@@ -37,7 +37,7 @@ pipeline {
                                 mvn sonar:sonar \
                                   -Dsonar.projectKey=student-management \
                                   -Dsonar.projectName="Student Management" \
-                                  -Dsonar.login=${SONAR_TOKEN}
+                                  -Dsonar.token=${SONAR_TOKEN}
                             '''
                         }
                     }

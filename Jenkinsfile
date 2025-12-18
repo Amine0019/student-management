@@ -47,7 +47,8 @@ pipeline {
                 script {
                     echo 'Waiting for Quality Gate...'
                     timeout(time: 5, unit: 'MINUTES') {
-                        def qg = waitForQualityGate()
+                        // Spécifiez explicitement l'URL du serveur SonarQube
+                        def qg = waitForQualityGate(abortPipeline: true, credentialsId: 'jenkins-sonar')
                         if (qg.status != 'OK') {
                             error "Quality Gate failed: ${qg.status}"
                         } else {

@@ -92,6 +92,17 @@ pipeline {
                 }
             }
         }
+        stage('5.5. Deploy MySQL') {
+            steps {
+                script {
+                    echo '🗄️  Deploying MySQL...'
+                    sh """
+                        kubectl apply -f k8s/mysql-deployment.yaml -n ${K8S_NAMESPACE}
+                        kubectl wait --for=condition=ready pod -l app=mysql -n ${K8S_NAMESPACE} --timeout=120s || true
+                    """
+                }
+            }
+        }
 
         stage('6. Deploy to Kubernetes') {
             steps {

@@ -11,14 +11,7 @@ pipeline {
     }
 
     stages {
-        stage('1. GIT Checkout') {
-            steps {
-                echo '📦 Checking out code from Git...'
-                git branch: 'zouaoui-samer',
-                    url: 'https://github.com/Amine0019/student-management.git',
-                    credentialsId: '3c513d29-97f9-4563-a82a-738fa9ed3009'
-            }
-        }
+        // SUPPRIMEZ LE STAGE "1. GIT Checkout" - Jenkins le fait déjà automatiquement
 
         stage('2. Maven Build') {
             steps {
@@ -106,6 +99,10 @@ pipeline {
                     echo '☸️  Deploying to Kubernetes...'
 
                     sh """
+                        # Vérifier que les fichiers k8s existent
+                        echo "=== Checking k8s files ==="
+                        ls -la k8s/
+
                         # Vérifier connexion
                         kubectl version --client
                         kubectl cluster-info

@@ -37,7 +37,7 @@ pipeline {
                                 mvn sonar:sonar \
                                   -Dsonar.projectKey=student-management \
                                   -Dsonar.projectName="Student Management" \
-                                  -Dsonar.token=${SONAR_TOKEN}
+                                  -Dsonar.login=${SONAR_TOKEN}
                             '''
                         }
                     }
@@ -50,18 +50,17 @@ pipeline {
                 script {
                     echo '⏳ Waiting for Quality Gate...'
                     timeout(time: 10, unit: 'MINUTES') {
-                        try {
-                            sleep(time: 10, unit: 'SECONDS')
-                            def qg = waitForQualityGate(abortPipeline: false)
+                        withCredentials([string(credentialsId: 'jenkins-sonar', variable: 'SONAR_TOKEN')]) {
+                            def qg = waitForQualityGate(
+                                abortPipeline: false,
+                                credentialsId: 'jenkins-sonar'
+                            )
                             if (qg.status != 'OK') {
                                 echo "⚠️ Quality Gate: ${qg.status}"
                                 currentBuild.result = 'UNSTABLE'
                             } else {
                                 echo '✅ Quality Gate passed!'
                             }
-                        } catch (Exception e) {
-                            echo "⚠️ Quality Gate: ${e.message}"
-                            currentBuild.result = 'UNSTABLE'
                         }
                     }
                 }
